@@ -10,7 +10,6 @@ import { isSymbolSExp, isEmptySExp, isCompoundSExp } from './L21-value-store';
 import { makeEmptySExp, makeSymbolSExp, SExpValue, makeCompoundSExp, valueToString } from './L21-value-store'
 
 
-//shayke
 /*
 ;; =============================================================================
 ;; Scheme Parser
