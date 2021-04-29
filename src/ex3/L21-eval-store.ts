@@ -3,14 +3,29 @@
 // Direct evaluation of letrec with mutation, define supports mutual recursion.
 
 import { map, reduce, repeat, zipWith } from "ramda";
-import { isBoolExp, isCExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef,
-         isAppExp, isDefineExp, isIfExp, isLetExp, isProcExp, Binding, VarDecl, CExp, Exp, IfExp, LetExp, ProcExp, Program,
-         parseL21Exp, DefineExp} from "./L21-ast";
-import { applyEnv, makeExtEnv, Env, Store, setStore, extendStore, ExtEnv, applyEnvStore, theGlobalEnv, globalEnvAddBinding, theStore } from "./L21-env-store";
+import {
+    isBoolExp, isCExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef,
+    isAppExp, isDefineExp, isIfExp, isLetExp, isProcExp, Binding, VarDecl, CExp, Exp, IfExp, LetExp, ProcExp, Program,
+    parseL21Exp, DefineExp, isSetExp
+} from "./L21-ast";
+import {
+    applyEnv,
+    makeExtEnv,
+    Env,
+    Store,
+    setStore,
+    extendStore,
+    ExtEnv,
+    applyEnvStore,
+    theGlobalEnv,
+    globalEnvAddBinding,
+    theStore,
+    applyStore
+} from "./L21-env-store";
 import { isClosure, makeClosure, Closure, Value } from "./L21-value-store";
 import { applyPrimitive } from "./evalPrimitive-store";
 import { first, rest, isEmpty } from "../shared/list";
-import { Result, bind, safe2, mapResult, makeFailure, makeOk } from "../shared/result";
+import {Result, bind, safe2, mapResult, makeFailure, makeOk, isOk} from "../shared/result";
 import { parse as p } from "../shared/parser";
 
 // ========================================================
@@ -21,13 +36,14 @@ const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isBoolExp(exp) ? makeOk(exp.val) :
     isStrExp(exp) ? makeOk(exp.val) :
     isPrimOp(exp) ? makeOk(exp) :
-    isVarRef(exp) ? ...§ :
+    isVarRef(exp) ? bind(applyEnv(env, exp.var),address => makeOk(applyStore(theStore, address))) : // not sur about it//////////////////////////////
     isLitExp(exp) ? makeOk(exp.val as Value) :
     isIfExp(exp) ? evalIf(exp, env) :
     isProcExp(exp) ? evalProc(exp, env) :
     isLetExp(exp) ? evalLet(exp, env) :
     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
                         (applicativeEval(exp.rator, env), mapResult((rand: CExp) => applicativeEval(rand, env), exp.rands)) :
+    isSetExp(exp) ? evalSet(exp, env) :
     exp;
 
 export const isTrueValue = (x: Value): boolean =>
@@ -65,8 +81,14 @@ const evalCExps = (first: Exp, rest: Exp[], env: Env): Result<Value> =>
     isCExp(first) ? bind(applicativeEval(first, env), _ => evalSequence(rest, env)) :
     first;
 
-const evalDefineExps = (def: DefineExp, exps: Exp[]): Result<Value> =>
-    // complete
+const evalDefineExps = (def: DefineExp, exps: Exp[]): Result<Value> => {
+    //deal with define
+    const store : Result<Store> = bind(applicativeEval(def.val, theGlobalEnv), value => makeOk(extendStore(theStore, value)))
+    const address : number = (isOk(store)) ? store.value.vals.length-1 : -1
+    globalEnvAddBinding(def.var.var, address)
+    //return value of define - send the rest to be dealt with
+    return evalCExps(first(exps), rest(exps), theGlobalEnv) //not sure if this it the function need to be called
+}
 
 // Main program
 // L2-BOX @@ Use GE instead of empty-env

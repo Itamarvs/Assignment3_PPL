@@ -23,8 +23,10 @@ export interface Closure {
     body: CExp[];
     env: Env;
 }
+
 export const makeClosure = (params: VarDecl[], body: CExp[], env: Env): Closure =>
     ({tag: "Closure", params, body, env});
+
 export const isClosure = (x: any): x is Closure => x.tag === "Closure";
 
 
