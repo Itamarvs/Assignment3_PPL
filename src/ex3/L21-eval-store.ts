@@ -83,7 +83,8 @@ const evalCExps = (first: Exp, rest: Exp[], env: Env): Result<Value> =>
 
 const evalDefineExps = (def: DefineExp, exps: Exp[]): Result<Value> => {
     //deal with define
-    const store : Result<Store> = bind(applicativeEval(def.val, theGlobalEnv), value => makeOk(extendStore(theStore, value)))
+    const store : Result<Store> =
+        bind(applicativeEval(def.val, theGlobalEnv), value => makeOk(extendStore(theStore, value)))
     const address : number = (isOk(store)) ? store.value.vals.length-1 : -1
     globalEnvAddBinding(def.var.var, address)
     //return value of define - send the rest to be dealt with
@@ -104,9 +105,8 @@ const evalLet = (exp: LetExp, env: Env): Result<Value> => {
     const vals = mapResult((v: CExp) => applicativeEval(v, env), map((b: Binding) => b.val, exp.bindings));
     const vars = map((b: Binding) => b.var.var, exp.bindings);
 
-    
     return bind(vals, (vals: Value[]) => {
-        const addresses = ...
+        const addresses = map(val => extendStore(theStore, val).vals.length-1, vals) // not sure if this is the relevant address
         const newEnv = makeExtEnv(vars, addresses, env)
         return evalSequence(exp.body, newEnv);
     })
