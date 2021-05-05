@@ -72,7 +72,7 @@ describe('L21 Parser', () => {
         it("returns a Failure for a program with no Exps", () => {
             expect(parseL21("(L21)")).to.satisfy(isFailure);
         });
-    
+
         it("returns a Failure if a program has an empty Exp", () => {
             expect(parseL21("(L21 ())")).to.satisfy(isFailure);
         });

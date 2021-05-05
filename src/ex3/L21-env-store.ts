@@ -30,7 +30,7 @@ export const makeEmptyStore = (): Store => {
 export const theStore: Store = makeEmptyStore()
 
 export const extendStore = (s: Store, val: Value): Store => {
-    s.vals = s.vals.concat(makeBox(val))
+    s.vals = s.vals.concat([makeBox(val)])
     return s
 }
 
@@ -41,7 +41,7 @@ export const applyStore = (store: Store, address: number): Result<Value> =>
     
 export const setStore = (store: Store, address: number, val: Value): void => {
     if (store.vals.length > address && address >= 0)
-        store.vals[address] = makeBox(val)
+        setBox(store.vals[address],(val))
 }
 
 // ========================================================
