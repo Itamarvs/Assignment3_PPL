@@ -6,7 +6,7 @@ import { map, reduce, repeat, zipWith } from "ramda";
 import {
     isBoolExp, isCExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef,
     isAppExp, isDefineExp, isIfExp, isLetExp, isProcExp, Binding, VarDecl, CExp, Exp, IfExp, LetExp, ProcExp, Program,
-    parseL21Exp, DefineExp, isSetExp
+    parseL21Exp, DefineExp, isSetExp, SetExp
 } from "./L21-ast";
 import {
     applyEnv,
@@ -16,7 +16,7 @@ import {
     setStore,
     extendStore,
     ExtEnv,
-    applyEnvStore,
+    // applyEnvStore,
     theGlobalEnv,
     globalEnvAddBinding,
     theStore,
@@ -36,7 +36,7 @@ const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isBoolExp(exp) ? makeOk(exp.val) :
     isStrExp(exp) ? makeOk(exp.val) :
     isPrimOp(exp) ? makeOk(exp) :
-    isVarRef(exp) ? bind(applyEnv(env, exp.var),address => makeOk(applyStore(theStore, address))) : // not sur about it//////////////////////////////
+    isVarRef(exp) ? bind(applyEnv(env, exp.var),address => applyStore(theStore, address)) : // not sur about it//////////////////////////////
     isLitExp(exp) ? makeOk(exp.val as Value) :
     isIfExp(exp) ? evalIf(exp, env) :
     isProcExp(exp) ? evalProc(exp, env) :
@@ -65,7 +65,7 @@ const applyProcedure = (proc: Value, args: Value[]): Result<Value> =>
 
 const applyClosure = (proc: Closure, args: Value[]): Result<Value> => {
     const vars = map((v: VarDecl) => v.var, proc.params);
-    const addresses: number[] = ...
+    const addresses: number[] = map(arg => extendStore(theStore, arg).vals.length-1, args)      //same shit about the addresses
     const newEnv: ExtEnv = makeExtEnv(vars, addresses, proc.env)
     return evalSequence(proc.body, newEnv);
 }
@@ -110,4 +110,11 @@ const evalLet = (exp: LetExp, env: Env): Result<Value> => {
         const newEnv = makeExtEnv(vars, addresses, env)
         return evalSequence(exp.body, newEnv);
     })
+}
+
+const evalSet = (exp: SetExp , env: Env): Result<Value> => {
+    const address = applyEnv(env, exp.var.var)
+    const val = applicativeEval(exp.val, env)
+    return safe2( (address: number, val: Value) => makeOk(setStore(theStore, address, val)))
+        (address, val)
 }
