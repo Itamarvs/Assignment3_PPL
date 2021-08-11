@@ -1,0 +1,85 @@
+diff --git a/load_policy.py b/load_policy.py
+index a799547..85848ab 100644
+--- a/load_policy.py
++++ b/load_policy.py
+@@ -1,4 +1,5 @@
+-import pickle, tensorflow as tf, tf_util, numpy as np
++import pickle, tensorflow.compat.v1 as tf, tf_util, numpy as np
++tf.disable_v2_behavior()
+ 
+ def load_policy(filename):
+     with open(filename, 'rb') as f:
+diff --git a/run_dagger.py b/run_dagger.py
+index 1e68ba3..cd549ee 100644
+--- a/run_dagger.py
++++ b/run_dagger.py
+@@ -8,7 +8,8 @@ based on the starter code from Berkeley CS294-112
+ '''
+ 
+ import pickle
+-import tensorflow as tf
++import tensorflow.compat.v1 as tf
++tf.disable_v2_behavior()
+ import numpy as np
+ import tf_util
+ import gym
+@@ -20,7 +21,7 @@ def main():
+     #===========================================================================
+     # param
+     expert_policy_file = 'experts/Humanoid-v1.pkl'
+-    envname = 'Humanoid-v1'
++    envname = 'Humanoid-v2'
+     render = 1
+     num_rollouts = 25
+     max_timesteps = 0
+@@ -30,7 +31,7 @@ def main():
+         tf_util.initialize()
+         import gym
+         env = gym.make(envname)
+-        max_steps = max_timesteps or env.spec.timestep_limit
++        max_steps = max_timesteps or env.spec.max_episode_steps
+     
+         returns = []
+         observations = []
+@@ -97,16 +98,16 @@ def main():
+         save_train_size = []
+         # loop for dagger alg
+         for i_dagger in xrange(50):
+-            print 'DAgger iteration ', i_dagger
++            print('DAgger iteration ', i_dagger)
+             # train a policy by fitting the MLP
+             batch_size = 25
+             for step in range(10000):
+                 batch_i = np.random.randint(0, obs_data.shape[0], size=batch_size)
+                 train_step.run(feed_dict={x: obs_data[batch_i, ], yhot: act_data[batch_i, ]})
+                 if (step % 1000 == 0):
+-                    print 'opmization step ', step
+-                    print 'obj value is ', loss_l2.eval(feed_dict={x:obs_data, yhot:act_data})
+-            print 'Optimization Finished!'
++                    print('opmization step ', step)
++                    print('obj value is ', loss_l2.eval(feed_dict={x:obs_data, yhot:act_data}))
++            print('Optimization Finished!')
+             # use trained MLP to perform
+             max_steps = env.spec.timestep_limit
+     
+@@ -151,7 +152,7 @@ def main():
+             
+     dagger_results = {'means': save_mean, 'stds': save_std, 'train_size': save_train_size,
+                       'expert_mean':save_expert_mean, 'expert_std':save_expert_std}
+-    print 'DAgger iterations finished!'
++    print('DAgger iterations finished!')
+ 
+ if __name__ == '__main__':
+     main()
+diff --git a/tf_util.py b/tf_util.py
+index c142795..c674e46 100644
+--- a/tf_util.py
++++ b/tf_util.py
+@@ -1,5 +1,6 @@
+ import numpy as np
+-import tensorflow as tf # pylint: ignore-module
++import tensorflow.compat.v1 as tf
++tf.disable_v2_behavior() # pylint: ignore-module
+ #import builtins
+ import functools
+ import copy
